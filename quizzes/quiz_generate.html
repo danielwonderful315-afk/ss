@@ -1,0 +1,120 @@
+{% extends 'base.html' %}
+{% block title %}Generate Quiz - StudySphere{% endblock %}
+{% block content %}
+
+<div class="row justify-content-center">
+    <div class="col-12 col-md-8 col-lg-6">
+        <div class="text-center mb-4">
+            <div style="font-size:3rem;margin-bottom:.5rem;">🤖</div>
+            <h4 class="page-title mb-1">AI Quiz Generator</h4>
+            <p class="page-subtitle">Select a book and Claude AI will generate quiz questions from it</p>
+        </div>
+
+        <div class="card">
+            <div class="card-header py-3">
+                <h6 class="mb-0"><i class="bi bi-robot me-2"></i>Generate Quiz from PDF</h6>
+            </div>
+            <div class="card-body p-3 p-md-4">
+                {% if books %}
+                <form method="post" action="{% url 'quiz_generate_process' %}" id="generateForm">
+                    {% csrf_token %}
+
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">Select a Book <span class="text-danger">*</span></label>
+                        <div class="d-flex flex-column gap-2" id="bookSelector">
+                            {% for book in books %}
+                            <label class="book-option" for="book_{{ book.pk }}">
+                                <input type="radio" name="book_id" id="book_{{ book.pk }}" value="{{ book.pk }}" class="d-none">
+                                <div class="d-flex align-items-center gap-3 p-3 rounded-3 book-card" style="border:1px solid var(--border2);cursor:pointer;transition:all .2s;">
+                                    <div class="rounded p-2 flex-shrink-0" style="background:rgba(124,58,237,.1);">
+                                        <i class="bi bi-file-earmark-pdf-fill text-danger"></i>
+                                    </div>
+                                    <div class="flex-grow-1" style="min-width:0;">
+                                        <div class="fw-semibold text-truncate" style="font-size:.9rem;">{{ book.title }}</div>
+                                        <small class="text-muted">{{ book.course_code }}</small>
+                                    </div>
+                                    <i class="bi bi-circle check-icon text-muted flex-shrink-0"></i>
+                                </div>
+                            </label>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">Number of Questions</label>
+                        <select name="num_questions" class="form-select">
+                            <option value="5">5 questions</option>
+                            <option value="10" selected>10 questions</option>
+                            <option value="15">15 questions</option>
+                        </select>
+                        <div class="form-text">More questions = slightly longer generation time</div>
+                    </div>
+
+                    <!-- AI Info Box -->
+                    <div class="p-3 rounded-3 mb-4" style="background:rgba(124,58,237,.08);border:1px solid rgba(124,58,237,.2);">
+                        <div class="d-flex gap-2 align-items-start">
+                            <i class="bi bi-info-circle flex-shrink-0 mt-1" style="color:var(--purple);"></i>
+                            <div style="font-size:.85rem;color:var(--text2);">
+                                Claude AI will read your PDF and generate multiple-choice questions. This usually takes <strong style="color:var(--text);">10–20 seconds</strong>.
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100 py-2" id="generateBtn">
+                        <i class="bi bi-robot me-2"></i>Generate Quiz with AI
+                    </button>
+                </form>
+
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="bi bi-file-earmark-pdf display-4 d-block mb-3" style="color:var(--text3);"></i>
+                    <h6 class="fw-bold mb-2">No approved books found</h6>
+                    <p class="text-muted mb-3">You need at least one approved book to generate a quiz.</p>
+                    <a href="{% url 'book_upload' %}" class="btn btn-primary">
+                        <i class="bi bi-cloud-upload-fill me-2"></i>Upload a Book
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="text-center mt-3">
+            <a href="{% url 'quiz_list' %}" class="text-muted" style="font-size:.85rem;">
+                <i class="bi bi-arrow-left me-1"></i>Back to My Quizzes
+            </a>
+        </div>
+    </div>
+</div>
+
+{% block extra_css %}
+<style>
+.book-option input:checked ~ .book-card {
+    border-color: var(--purple) !important;
+    background: rgba(124,58,237,.08);
+}
+.book-option input:checked ~ .book-card .check-icon {
+    color: var(--purple) !important;
+}
+.book-option input:checked ~ .book-card .check-icon::before {
+    content: "\f26b";
+}
+.book-card:hover { border-color: rgba(124,58,237,.4) !important; }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('generateForm').addEventListener('submit', function(e) {
+    const selected = document.querySelector('input[name="book_id"]:checked');
+    if (!selected) {
+        e.preventDefault();
+        alert('Please select a book first.');
+        return;
+    }
+    const btn = document.getElementById('generateBtn');
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Generating... please wait';
+    btn.disabled = true;
+});
+</script>
+{% endblock %}
+{% endblock %}
